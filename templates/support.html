@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Support | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v='20260524-2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/support.css', v='20260524-1') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-root" data-mood-theme="neutral">
+  <aside class="dashboard-sidebar" aria-label="Sidebar">
+    <div class="sidebar-logo-container">
+      <a class="sidebar-logo-link" href="{{ url_for('dashboard') }}" aria-label="EUMO Dashboard">
+        <span class="sidebar-logo-mark">{{ user_initial or "E" }}</span>
+        <span class="sidebar-logo-text">EUMO</span>
+      </a>
+    </div>
+
+    <nav class="sidebar-navigation" aria-label="Main Navigation">
+      <ul class="sidebar-nav-list">
+        <li class="sidebar-nav-item"><a href="{{ url_for('dashboard') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'milestones' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="layout-dashboard" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Milestones</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('know_yourself') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'know_yourself' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="brain-circuit" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Know Yourself</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('games') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'games' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="gamepad-2" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Games</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('journal') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'journal' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="notebook-pen" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Journal</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('support') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'support' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="life-buoy" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Support</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('settings') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'settings' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="settings-2" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Settings</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-bottom-area">
+      <a href="{{ url_for('logout') }}" class="sidebar-logout-button">Logout</a>
+      <a href="{{ url_for('developers') }}" data-nav-transition="true"
+        class="sidebar-footer-text sidebar-footer-link">Developers</a>
+      <small class="sidebar-footer-text">EUMO v1.0 · Emotional Workspace</small>
+    </div>
+  </aside>
+
+  <main class="dashboard-main-content section-main-content">
+    <section class="panel-shell section-hero">
+      <p class="section-kicker">Support</p>
+      <h1>You’re not alone in this</h1>
+      <p>If you need immediate help, use emergency services first. For ongoing care, connect with licensed professionals
+        near you.</p>
+    </section>
+
+    <section class="support-priority-grid">
+      <article class="panel-shell support-priority-card emergency">
+        <h2><b>Immediate Emergency</b></h2>
+        <p>Call <strong>112</strong> now if there is immediate danger to you or someone else.</p>
+      </article>
+      <article class="panel-shell support-priority-card talk">
+        <h2><b>Talk to Someone</b></h2>
+        <p>Contact a trusted friend, family member, or campus support person now.</p>
+      </article>
+      <article class="panel-shell support-priority-card therapy">
+        <h2><b>Professional Therapy</b></h2>
+        <p>Book licensed therapy for structured emotional support and recovery.</p>
+      </article>
+      <article class="panel-shell support-priority-card regulate">
+        <h2><b>Self-Regulation Tools</b></h2>
+        <p>Use guided breathing, grounding, and short reset practices below.</p>
+      </article>
+    </section>
+
+    <section class="support-grid">
+      <article class="panel-shell support-card support-card-categories">
+        <h2>Find Support By Emotional State</h2>
+        <div class="emotion-support-grid">
+          <button type="button" data-support-state="panic">Panic / Overwhelm</button>
+          <button type="button" data-support-state="burnout">Burnout</button>
+          <button type="button" data-support-state="loneliness">Loneliness</button>
+          <button type="button" data-support-state="crisis">Crisis</button>
+          <button type="button" data-support-state="academic">Academic Pressure</button>
+          <button type="button" data-support-state="exhausted">Emotional Exhaustion</button>
+          <button type="button" data-support-state="social">Social Anxiety</button>
+          <button type="button" data-support-state="conflict">Conflict Recovery</button>
+        </div>
+      </article>
+
+      <article class="panel-shell support-card support-card-tools">
+        <h2>Quick Grounding Tools</h2>
+        <div class="grounding-tools">
+          <button type="button" id="breathToolBtn">60s Breathing Reset</button>
+          <button type="button" id="groundingToolBtn">5-4-3-2-1 Grounding</button>
+          <button type="button" id="reflectionToolBtn">Mini Reflection</button>
+          <button type="button" id="audioToolBtn">Calm Audio</button>
+          <button type="button" id="resetToolBtn">Emotional Reset</button>
+        </div>
+        <div class="support-tool-output" id="supportToolOutput">
+          Tap a tool to begin a guided support step.
+        </div>
+      </article>
+    </section>
+
+    <section class="quotes-grid">
+      <article class="panel-shell quote-card">
+        <p>“Small steps every day still move you forward.”</p>
+      </article>
+      <article class="panel-shell quote-card">
+        <p>“Asking for help is a strength, not a setback.”</p>
+      </article>
+      <article class="panel-shell quote-card">
+        <p>“Your wellbeing matters even on quiet days.”</p>
+      </article>
+    </section>
+
+    <div class="support-breath-orb" aria-hidden="true">
+      <span class="support-orb-core"></span>
+      <span class="support-orb-ring"></span>
+    </div>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/support.js', v='20260524-1') }}"></script>
+{% endblock %}

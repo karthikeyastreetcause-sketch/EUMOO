@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Journal | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/journal.css', v='20260524-3') }}">
+{% endblock %}
+
+{% block content %}
+<div class="journal-root" id="journalRoot" data-username="{{ user_display_name or session.get('username', 'friend') }}">
+  <aside class="journal-sidebar" aria-label="Main Navigation">
+    <div class="journal-logo-container">
+      <a class="journal-logo-link" href="{{ url_for('dashboard') }}" aria-label="EUMO Dashboard">
+        <span class="journal-logo-mark">{{ user_initial or "E" }}</span>
+        <span class="journal-logo-text">EUMO</span>
+      </a>
+    </div>
+
+    <nav class="journal-nav">
+      <ul class="journal-nav-list">
+        <li><a class="journal-nav-link {% if active_nav == 'milestones' %}journal-nav-link-active{% endif %}" data-nav-transition="true"
+            href="{{ url_for('dashboard') }}"><i data-lucide="layout-dashboard" class="journal-nav-icon" aria-hidden="true"></i><span>Milestones</span></a></li>
+        <li><a class="journal-nav-link {% if active_nav == 'know_yourself' %}journal-nav-link-active{% endif %}" data-nav-transition="true"
+            href="{{ url_for('know_yourself') }}"><i data-lucide="brain-circuit" class="journal-nav-icon" aria-hidden="true"></i><span>Know Yourself</span></a></li>
+        <li><a class="journal-nav-link {% if active_nav == 'games' %}journal-nav-link-active{% endif %}" data-nav-transition="true"
+            href="{{ url_for('games') }}"><i data-lucide="gamepad-2" class="journal-nav-icon" aria-hidden="true"></i><span>Games</span></a></li>
+        <li><a class="journal-nav-link {% if active_nav == 'journal' %}journal-nav-link-active{% endif %}" data-nav-transition="true"
+            href="{{ url_for('journal') }}"><i data-lucide="notebook-pen" class="journal-nav-icon" aria-hidden="true"></i><span>Journal</span></a></li>
+        <li><a class="journal-nav-link {% if active_nav == 'support' %}journal-nav-link-active{% endif %}" data-nav-transition="true"
+            href="{{ url_for('support') }}"><i data-lucide="life-buoy" class="journal-nav-icon" aria-hidden="true"></i><span>Support</span></a></li>
+        <li><a class="journal-nav-link {% if active_nav == 'settings' %}journal-nav-link-active{% endif %}" data-nav-transition="true"
+            href="{{ url_for('settings') }}"><i data-lucide="settings-2" class="journal-nav-icon" aria-hidden="true"></i><span>Settings</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="journal-sidebar-bottom">
+      <a href="{{ url_for('logout') }}" class="journal-logout-btn">Logout</a>
+      <a href="{{ url_for('developers') }}" data-nav-transition="true" class="journal-footer-copy journal-footer-link">Developers</a>
+      <small class="journal-footer-copy">EUMO v1.0 · Emotional Workspace</small>
+    </div>
+  </aside>
+
+  <main class="journal-main">
+    <header class="journal-topbar journal-topbar-compact glass-card">
+      <div class="journal-page-heading">
+        <p class="journal-page-kicker">Personal Journal Space</p>
+        <h1 class="journal-page-title">Journal</h1>
+      </div>
+      <div class="journal-topbar-meta">
+        <div class="meta-chip">
+          <p>Entries</p>
+          <strong id="journalEntryCount">0</strong>
+        </div>
+        <div class="meta-chip">
+          <p>AI Sharing</p>
+          <strong id="journalAiConsentBadge">Not set</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="journal-layout">
+      <aside class="journal-list-panel glass-card">
+        <header class="journal-list-head">
+          <h2>My Journals</h2>
+          <button type="button" id="createJournalBtn">New Journal</button>
+        </header>
+        <p class="journal-list-sub">Tap any journal title to continue writing.</p>
+        <ul id="journalList" class="journal-list" aria-label="Journal Entries"></ul>
+        <p id="journalListEmpty" class="journal-list-empty">No journal entries yet. Create your first one.</p>
+      </aside>
+
+      <section class="journal-editor-panel glass-card">
+        <div class="journal-atmosphere" aria-hidden="true">
+          <span class="journal-atmo-orb one"></span>
+          <span class="journal-atmo-orb two"></span>
+        </div>
+
+        <div class="journal-consent-strip" id="journalConsentStrip">
+          <p id="journalConsentText">
+            Decide if journals can be shared with AI insights in the future. You can change this any time.
+          </p>
+          <div class="journal-consent-actions">
+            <button type="button" id="allowAiShareBtn" class="consent-btn">Allow AI Access</button>
+            <button type="button" id="denyAiShareBtn" class="consent-btn">Keep Private</button>
+          </div>
+        </div>
+
+        <div class="journal-editor-head">
+          <input id="journalTitleInput" type="text" maxlength="160" placeholder="Untitled note" autocomplete="off">
+        </div>
+
+        <div class="journal-editor-meta">
+          <span id="journalUpdatedAt">No journal selected</span>
+          <span id="journalLockState">Unlocked</span>
+          <span id="journalSaveState" class="save-state">All changes saved</span>
+        </div>
+
+        <div id="journalLockGate" class="journal-lock-gate" hidden>
+          <p class="journal-lock-title">This note is locked</p>
+          <p class="journal-lock-sub">Enter the 4-digit pin to open and edit this note.</p>
+          <div class="journal-lock-row">
+            <input id="unlockPinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4"
+              placeholder="4-digit PIN" autocomplete="new-password">
+            <button type="button" id="unlockNoteBtn" class="consent-btn">Unlock</button>
+          </div>
+          <p id="unlockFeedback" class="unlock-feedback" hidden></p>
+        </div>
+
+        <textarea id="journalContentInput" placeholder="Start writing your thoughts..." spellcheck="true"></textarea>
+
+        <section class="journal-ai-reflection-card" id="journalAiReflectionCard">
+          <h3>AI Reflection Preview</h3>
+          <p id="journalAiPatterns">Patterns detected: waiting for more writing.</p>
+          <p id="journalAiAction">Suggested action: write 3 lines about what felt heavy and what felt light today.</p>
+        </section>
+
+        <div id="journalEditorEmpty" class="journal-editor-empty">
+          Select an entry from the left or create a new journal to begin.
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div id="noteActionMenu" class="note-action-menu" hidden>
+    <button type="button" id="noteActionDeleteBtn" class="note-action-btn danger">Delete</button>
+    <button type="button" id="noteActionLockBtn" class="note-action-btn">Lock note</button>
+    <button type="button" id="noteActionRemoveLockBtn" class="note-action-btn">Remove lock</button>
+    <button type="button" id="noteActionForgotPinBtn" class="note-action-btn">Forgot PIN</button>
+  </div>
+
+  <div id="noteActionModal" class="note-action-modal" hidden>
+    <div class="note-action-dialog">
+      <h3 id="noteActionModalTitle">Confirm action</h3>
+      <p id="noteActionModalMessage"></p>
+
+      <div id="noteActionFieldCurrentWrap" class="note-action-field" hidden>
+        <label for="noteActionCurrentPin">Current PIN</label>
+        <input id="noteActionCurrentPin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]*"
+          autocomplete="new-password" placeholder="4-digit PIN">
+      </div>
+
+      <div id="noteActionFieldNewWrap" class="note-action-field" hidden>
+        <label for="noteActionNewPin">New PIN</label>
+        <input id="noteActionNewPin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]*"
+          autocomplete="new-password" placeholder="4-digit PIN">
+      </div>
+
+      <div id="noteActionFieldDeleteWrap" class="note-action-field" hidden>
+        <label for="noteActionDeletePin">PIN</label>
+        <input id="noteActionDeletePin" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]*"
+          autocomplete="new-password" placeholder="4-digit PIN">
+      </div>
+
+      <div id="noteActionFieldPasswordWrap" class="note-action-field" hidden>
+        <label for="noteActionLoginPassword">Login password</label>
+        <input type="text" autocomplete="username" style="position:absolute;left:-9999px;opacity:0;" tabindex="-1" aria-hidden="true">
+        <input type="password" autocomplete="new-password" style="position:absolute;left:-9999px;opacity:0;" tabindex="-1" aria-hidden="true">
+        <input id="noteActionLoginPassword" name="journal_lock_password_input" type="password" autocomplete="off" autocapitalize="off"
+          autocorrect="off" spellcheck="false" value="" placeholder="Enter login password">
+      </div>
+
+      <p id="noteActionModalFeedback" class="note-action-modal-feedback" hidden></p>
+
+      <div class="note-action-dialog-actions">
+        <button type="button" id="noteActionModalCancelBtn" class="note-action-dialog-btn">Cancel</button>
+        <button type="button" id="noteActionModalConfirmBtn" class="note-action-dialog-btn primary">Confirm</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/journal.js', v='20260529-1') }}"></script>
+{% endblock %}

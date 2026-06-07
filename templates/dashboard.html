@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v='20260529-1') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-root" id="dashboardRoot" data-username="{{ user_display_name or session.get('username', 'friend') }}"
+  data-mood-theme="neutral">
+  <aside class="dashboard-sidebar" aria-label="Sidebar">
+    <div class="sidebar-logo-container">
+      <a class="sidebar-logo-link" href="{{ url_for('dashboard') }}" aria-label="EUMO Dashboard">
+        <span class="sidebar-logo-mark">{{ user_initial or "E" }}</span>
+        <span class="sidebar-logo-text">EUMO</span>
+      </a>
+    </div>
+
+    <nav class="sidebar-navigation" aria-label="Main Navigation">
+      <ul class="sidebar-nav-list">
+        <li class="sidebar-nav-item">
+          <a href="{{ url_for('dashboard') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'milestones' %}sidebar-nav-link-active{% endif %}">
+            <i data-lucide="layout-dashboard" class="sidebar-nav-icon" aria-hidden="true"></i>
+            <span class="sidebar-nav-label">Milestones</span>
+          </a>
+        </li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('know_yourself') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'know_yourself' %}sidebar-nav-link-active{% endif %}"><i data-lucide="brain-circuit" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Know Yourself</span></a>
+        </li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('games') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'games' %}sidebar-nav-link-active{% endif %}"><i data-lucide="gamepad-2" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Games</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('journal') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'journal' %}sidebar-nav-link-active{% endif %}"><i data-lucide="notebook-pen" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Journal</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('support') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'support' %}sidebar-nav-link-active{% endif %}"><i data-lucide="life-buoy" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Support</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('settings') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'settings' %}sidebar-nav-link-active{% endif %}"><i data-lucide="settings-2" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Settings</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-bottom-area">
+      <a href="{{ url_for('logout') }}" class="sidebar-logout-button">Logout</a>
+      <a href="{{ url_for('developers') }}" data-nav-transition="true" class="sidebar-footer-text sidebar-footer-link">Developers</a>
+      <small class="sidebar-footer-text">EUMO v1.0 · Emotional Workspace</small>
+    </div>
+  </aside>
+
+  <main class="dashboard-main-content">
+    <section class="dashboard-header-section panel-shell">
+      <div class="dashboard-welcome-container">
+        <p class="dashboard-eyebrow">Mental wellbeing reflection</p>
+        <h1 class="dashboard-welcome-message">
+          <span class="dashboard-welcome-line">Welcome back,</span>
+          <span id="dashboardUserName" class="dashboard-username">Friend</span>
+        </h1>
+      </div>
+
+      <div class="dashboard-live-clock-container metric-chip" aria-live="polite">
+        <p class="metric-label">Live Time</p>
+        <div class="clock-line" aria-label="Live clock">
+          <span id="clockHours" class="clock-hours">--</span>
+          <span class="clock-separator">:</span>
+          <span id="clockMinutes" class="clock-minutes">--</span>
+          <span class="clock-separator">:</span>
+          <span id="clockSeconds" class="clock-seconds">--</span>
+        </div>
+      </div>
+
+      <div class="dashboard-streak-indicator-container metric-chip">
+        <p class="metric-label">Streak</p>
+        <p class="metric-value" id="streakValue">--</p>
+        <p class="metric-sub-label" id="streakEvolutionText">Your reflection rhythm is building.</p>
+      </div>
+
+      <div class="dashboard-emotional-stability-score-container metric-chip">
+        <p class="metric-label">Emotional Stability Score</p>
+        <p class="metric-value" id="emotionalStabilityScore">--</p>
+        <p class="metric-sub-label" id="emotionalStabilityLabel">No signal yet</p>
+        <p class="metric-delta-label" id="emotionalStabilityDelta">+0 from yesterday</p>
+      </div>
+
+      <div class="mood-orb" id="moodOrb" aria-hidden="true">
+        <span class="mood-orb-core"></span>
+        <span class="mood-orb-wave"></span>
+        <span class="mood-orb-label">Mood Pulse</span>
+      </div>
+    </section>
+
+    <p id="dashboardNotice" class="dashboard-notice" hidden></p>
+
+    <section class="dashboard-intelligence-ribbon">
+      <article class="panel-shell ribbon-card ribbon-weather-card">
+        <header class="ribbon-card-head">
+          <h2 class="summary-card-title">Emotional Weather</h2>
+          <span id="weatherIcon" class="weather-icon">⛅</span>
+        </header>
+        <p id="weatherTitle" class="weather-title">Reading emotional atmosphere...</p>
+        <p id="weatherDescription" class="weather-description">Your emotional weather will appear after daily inputs.</p>
+      </article>
+
+      <article class="panel-shell ribbon-card ribbon-mode-card">
+        <header class="ribbon-card-head">
+          <h2 class="summary-card-title">Modes</h2>
+          <span class="summary-mini">Adaptive</span>
+        </header>
+        <div class="mode-button-row">
+          <button type="button" id="calmModeBtn" class="mode-btn">Enter Calm Mode</button>
+          <button type="button" id="focusModeBtn" class="mode-btn">Enter Focus Mode</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-summary-cards-section">
+      <article class="summary-card summary-card-todays-emotion panel-shell">
+        <header class="summary-card-header">
+          <h2 class="summary-card-title">Today's Emotional State</h2>
+          <button type="button" id="toggleEmotionOptions" class="chip-btn">Choose mood</button>
+        </header>
+
+        <div class="todays-emotion-display-area" id="todaysEmotionDisplay">
+          <p class="todays-emotion-label">Current Selection</p>
+          <p class="todays-emotion-value" id="selectedEmotionValue">No check-in yet</p>
+          <p class="todays-emotion-note" id="selectedEmotionNote">Pick one mood for today.</p>
+        </div>
+
+        <p id="moodLockText" class="mood-lock-text"></p>
+
+        <div class="todays-emotion-options-container" id="emotionOptionsContainer" hidden>
+          <button type="button" id="emotionOptionCalm" class="emotion-option-button" data-emotion="Calm">Calm</button>
+          <button type="button" id="emotionOptionFocused" class="emotion-option-button"
+            data-emotion="Focused">Focused</button>
+          <button type="button" id="emotionOptionAnxious" class="emotion-option-button"
+            data-emotion="Anxious">Anxious</button>
+          <button type="button" id="emotionOptionTired" class="emotion-option-button"
+            data-emotion="Tired">Tired</button>
+          <button type="button" id="emotionOptionHopeful" class="emotion-option-button"
+            data-emotion="Hopeful">Hopeful</button>
+        </div>
+      </article>
+
+      <article class="summary-card panel-shell">
+        <header class="summary-card-header">
+          <h2 class="summary-card-title">Weekly Progress</h2>
+          <span class="summary-mini" id="weeklyProgressMini">--</span>
+        </header>
+
+        <div class="summary-card-body compact-metric-block">
+          <p class="compact-label">Login activity this week</p>
+          <p class="compact-value" id="weeklyCheckinsValue">--</p>
+          <div class="mini-progress-track" aria-hidden="true">
+            <span class="mini-progress-fill" id="weeklyConsistencyFill"></span>
+          </div>
+          <p class="compact-sub" id="weeklyProgressSub">No activity tracked yet.</p>
+        </div>
+      </article>
+
+      <article class="summary-card summary-card-checkin panel-shell">
+        <header class="summary-card-header">
+          <h2 class="summary-card-title">Check-In Completion</h2>
+          <span id="checkinStatusBadge" class="status-badge">Pending</span>
+        </header>
+
+        <div class="summary-card-body checkin-card-body">
+          <p class="checkin-title" id="checkInCompletionValue">Not completed</p>
+          <p class="checkin-sub" id="checkInCompletionSub">Pick one mood to complete today's check-in.</p>
+          <div class="checkin-pulse" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="dashboard-middle-section">
+      <div class="middle-left-container">
+        <article class="analytics-panel panel-shell">
+          <header class="panel-header analytics-header">
+            <h2 class="panel-title">Weekly Emotional Insights</h2>
+            <span class="panel-tag" id="stabilityMonthLabel">--</span>
+          </header>
+
+          <section class="line-graph-section graph-shell">
+            <div class="graph-head">
+              <h3>Emotional Stability (Line Graph)</h3>
+            </div>
+            <div id="lineGraphEmpty" class="graph-empty" hidden>No emotional stability data yet. Complete check-ins to
+              see monthly trends.</div>
+            <svg id="stabilityLineGraph" class="graph-svg line-svg" viewBox="0 0 900 280" preserveAspectRatio="none"
+              aria-label="Emotional stability line graph"></svg>
+          </section>
+
+          <div class="graph-row">
+            <section class="graph-card graph-shell">
+              <div class="graph-head">
+                <h3>Weekly Check-In Activity (Bar Graph)</h3>
+              </div>
+              <div id="barGraphEmpty" class="graph-empty" hidden>No weekly check-in data yet.</div>
+              <svg id="weeklyBarGraph" class="graph-svg bar-svg" viewBox="0 0 540 250" preserveAspectRatio="none"
+                aria-label="Weekly bar graph"></svg>
+            </section>
+
+            <section class="graph-card graph-shell pie-card">
+              <div class="graph-head">
+                <h3>Emotion Mix (Pie Chart)</h3>
+              </div>
+              <div class="pie-wrap">
+                <svg id="emotionPieChart" class="pie-svg" viewBox="0 0 240 240"
+                  aria-label="Emotion mix pie chart"></svg>
+              </div>
+              <ul id="emotionPieLegend" class="pie-legend"></ul>
+            </section>
+          </div>
+        </article>
+      </div>
+
+      <div class="middle-right-container">
+        <article class="micro-goals-section panel-shell">
+          <header class="panel-header">
+            <h2 class="panel-title">Micro Goals</h2>
+          </header>
+
+          <form id="goalForm" class="goal-form" autocomplete="off">
+            <input id="goalInput" type="text" maxlength="180" placeholder="Add a new goal..." aria-label="Add goal">
+            <button type="submit" id="goalAddBtn" aria-label="Add Goal">+</button>
+          </form>
+
+          <ul class="goal-list" id="microGoalsList"></ul>
+        </article>
+
+        <article class="context-aware-suggestion-section panel-shell">
+          <header class="panel-header">
+            <h2 class="panel-title">Context-Aware Suggestion</h2>
+          </header>
+          <div class="panel-copy context-copy" id="contextSuggestionText">
+            Select today's emotional state to unlock personalized activity suggestions.
+          </div>
+        </article>
+
+        <article class="reflection-prompt-generator-section panel-shell">
+          <header class="panel-header">
+            <h2 class="panel-title">Reflection Prompt Generator</h2>
+            <button type="button" id="refreshPromptBtn" class="chip-btn">New prompt</button>
+          </header>
+
+          <div class="panel-copy reflection-prompt-copy" id="reflectionPromptText">
+            Choose today's mood to get a reflection prompt.
+          </div>
+
+          <form id="reflectionForm" class="reflection-form" autocomplete="off">
+            <textarea id="reflectionAnswer" rows="4" maxlength="2400"
+              placeholder="Write your reflection here..."></textarea>
+            <div class="reflection-actions">
+              <button type="submit" id="saveReflectionBtn">Save Reflection</button>
+              <p id="reflectionFeedback" class="reflection-feedback" hidden></p>
+            </div>
+          </form>
+        </article>
+      </div>
+    </section>
+
+    <section class="dashboard-intelligence-grid">
+      <article class="panel-shell intelligence-card">
+        <header class="panel-header">
+          <h2 class="panel-title">Emotional Timeline</h2>
+        </header>
+        <ul class="timeline-list" id="emotionalTimelineList"></ul>
+      </article>
+
+      <article class="panel-shell intelligence-card">
+        <header class="panel-header">
+          <h2 class="panel-title">Emotional Achievements</h2>
+        </header>
+        <ul class="achievement-list" id="emotionalAchievementsList"></ul>
+      </article>
+
+      <article class="panel-shell intelligence-card">
+        <header class="panel-header">
+          <h2 class="panel-title">Emotional Insight Cards</h2>
+        </header>
+        <div class="insight-card-stack" id="emotionalInsightCards"></div>
+      </article>
+    </section>
+  </main>
+
+  <div class="floating-action-button-container">
+    <button type="button" class="floating-action-button" id="quickActionFab" aria-label="Open ECHO Chat">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ECHO" class="floating-action-logo">
+    </button>
+    <span class="floating-action-label">ECHO</span>
+  </div>
+
+  <div class="echo-chat-overlay" id="echoChatOverlay"></div>
+  <div class="graph-tooltip" id="graphTooltip" hidden></div>
+  <div class="daily-opening-overlay" id="dailyOpeningOverlay" hidden>
+    <article class="daily-opening-card">
+      <p class="daily-opening-kicker">Daily Opening</p>
+      <h3 id="dailyOpeningGreeting">Good evening.</h3>
+      <p id="dailyOpeningInsight">Your emotional rhythm is being read...</p>
+    </article>
+  </div>
+  <section class="echo-chat-panel" id="echoChatPanel" aria-hidden="true" aria-label="ECHO Assistant Panel">
+    <header class="echo-chat-header">
+      <div class="echo-chat-brand">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="ECHO Logo" class="echo-chat-brand-logo">
+        <div class="echo-chat-brand-copy">
+          <h3>ECHO</h3>
+          <p>AI wellbeing companion</p>
+        </div>
+      </div>
+      <button type="button" class="echo-chat-close" id="echoChatClose" aria-label="Close ECHO Chat">✕</button>
+    </header>
+
+    <div class="echo-chat-messages" id="echoChatMessages" aria-live="polite">
+      <div class="echo-bubble echo-bubble-assistant">
+        Hi, I’m ECHO. Share how your day is going, and I’ll respond with gentle guidance.
+      </div>
+    </div>
+
+    <form class="echo-chat-input-row" id="echoChatForm" autocomplete="off">
+      <input type="text" id="echoChatInput" placeholder="Type a message..." maxlength="1200">
+      <button type="submit" id="echoSendBtn" aria-label="Send">→</button>
+    </form>
+  </section>
+</div>
+
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260524-3') }}"></script>
+{% endblock %}

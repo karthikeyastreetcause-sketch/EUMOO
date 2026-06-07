@@ -1,0 +1,12 @@
+:root {
+  --eumo-bg: #f2f0ff;
+  --eumo-primary: #323963;
+}
+
+.placeholder-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f7f4ff 100%);
+  border: 1px solid rgba(50, 57, 99, 0.1);
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 8px 30px rgba(50, 57, 99, 0.08);
+}

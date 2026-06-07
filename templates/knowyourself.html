@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}Know Yourself | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/knowyourself.css', v='20260524-1') }}">
+{% endblock %}
+
+{% block content %}
+<div class="ky-root" id="kyRoot" data-username="{{ user_display_name or session.get('username', 'friend') }}">
+  <aside class="ky-sidebar" aria-label="Sidebar">
+    <div class="ky-logo-container">
+      <a class="ky-logo-link" href="{{ url_for('dashboard') }}" aria-label="EUMO Dashboard">
+        <span class="ky-logo-mark">{{ user_initial or "E" }}</span>
+        <span class="ky-logo-text">EUMO</span>
+      </a>
+    </div>
+
+    <nav class="ky-navigation" aria-label="Main Navigation">
+      <ul class="ky-nav-list">
+        <li><a href="{{ url_for('dashboard') }}" data-nav-transition="true"
+            class="ky-nav-link {% if active_nav == 'milestones' %}ky-nav-link-active{% endif %}">
+            <i data-lucide="layout-dashboard" class="ky-nav-icon" aria-hidden="true"></i><span>Milestones</span>
+          </a></li>
+        <li><a href="{{ url_for('know_yourself') }}" data-nav-transition="true"
+            class="ky-nav-link {% if active_nav == 'know_yourself' %}ky-nav-link-active{% endif %}">
+            <i data-lucide="brain-circuit" class="ky-nav-icon" aria-hidden="true"></i><span>Know Yourself</span>
+          </a></li>
+        <li><a href="{{ url_for('games') }}" data-nav-transition="true"
+            class="ky-nav-link {% if active_nav == 'games' %}ky-nav-link-active{% endif %}">
+            <i data-lucide="gamepad-2" class="ky-nav-icon" aria-hidden="true"></i><span>Games</span>
+          </a></li>
+        <li><a href="{{ url_for('journal') }}" data-nav-transition="true"
+            class="ky-nav-link {% if active_nav == 'journal' %}ky-nav-link-active{% endif %}">
+            <i data-lucide="notebook-pen" class="ky-nav-icon" aria-hidden="true"></i><span>Journal</span>
+          </a></li>
+        <li><a href="{{ url_for('support') }}" data-nav-transition="true"
+            class="ky-nav-link {% if active_nav == 'support' %}ky-nav-link-active{% endif %}">
+            <i data-lucide="life-buoy" class="ky-nav-icon" aria-hidden="true"></i><span>Support</span>
+          </a></li>
+        <li><a href="{{ url_for('settings') }}" data-nav-transition="true"
+            class="ky-nav-link {% if active_nav == 'settings' %}ky-nav-link-active{% endif %}">
+            <i data-lucide="settings-2" class="ky-nav-icon" aria-hidden="true"></i><span>Settings</span>
+          </a></li>
+      </ul>
+    </nav>
+
+    <div class="ky-sidebar-bottom">
+      <a href="{{ url_for('logout') }}" class="ky-logout-btn">Logout</a>
+      <a href="{{ url_for('developers') }}" data-nav-transition="true" class="ky-footer-copy ky-footer-link">Developers</a>
+      <small class="ky-footer-copy">EUMO v1.0 · Emotional Workspace</small>
+    </div>
+  </aside>
+
+  <main class="ky-main">
+    <header class="ky-header glass-card">
+      <div class="ky-header-copy">
+        <p class="ky-kicker">Know Yourself Assessment</p>
+        <h1 class="ky-title">Personal Trait Compass</h1>
+        <p class="ky-subtitle">10 quick prompts, one randomized question per trait.</p>
+      </div>
+      <div class="ky-metrics">
+        <div class="ky-metric-chip">
+          <p>Traits</p>
+          <strong id="kyTraitCount">--</strong>
+        </div>
+        <div class="ky-metric-chip">
+          <p>Questions</p>
+          <strong id="kyQuestionCount">--</strong>
+        </div>
+      </div>
+    </header>
+
+    <p id="kyNotice" class="ky-notice" hidden></p>
+
+    <section id="kyIntroStage" class="ky-stage glass-card">
+      <div class="ky-stage-head">
+        <h2>Ready for a quick self-scan?</h2>
+      </div>
+      <p class="ky-stage-copy">
+        This section gives you a fast behavioral snapshot across green and red traits in one short session.
+      </p>
+      <div id="kyTraitChips" class="ky-trait-chips" aria-label="Trait Coverage"></div>
+      <div class="ky-meta-row">
+        <span>Estimated Time: 3 minutes</span>
+        <span>Adaptive Personality Scan</span>
+        <span>AI-Generated Insight Profile</span>
+        <span>Dynamic Trait Analysis</span>
+      </div>
+      <div class="ky-info-grid">
+        <article class="ky-info-item">
+          <h3>Recent Insight</h3>
+          <p>“You tend to over-rationalize emotional conflict when stress is high.”</p>
+        </article>
+        <article class="ky-info-item">
+          <h3>Dominant Trait</h3>
+          <p>Adaptive thinker with strong pattern recognition under uncertainty.</p>
+        </article>
+        <article class="ky-info-item">
+          <h3>Growth Area</h3>
+          <p>Emotional consistency can improve when routines stay stable for 7+ days.</p>
+        </article>
+        <article class="ky-info-item">
+          <h3>Pattern Preview</h3>
+          <p>You likely recharge through solitude but still need selective social support.</p>
+        </article>
+      </div>
+      <div class="ky-stage-actions">
+        <button id="kyStartBtn" type="button" class="ky-btn-primary">
+          <span>Discover My Pattern</span>
+          <span class="ky-btn-arrow" aria-hidden="true">→</span>
+        </button>
+      </div>
+      <div id="kyLatestResultHint" class="ky-latest-result" hidden></div>
+    </section>
+
+    <section id="kyQuestionStage" class="ky-stage glass-card" hidden>
+      <div class="ky-stage-head">
+        <h2 id="kyQuestionProgress">Question 1 / 10</h2>
+        <span class="ky-pill" id="kyTraitBadge">Trait</span>
+      </div>
+      <div class="ky-progress-track" aria-hidden="true">
+        <span class="ky-progress-fill" id="kyProgressFill"></span>
+      </div>
+
+      <article class="ky-question-card">
+        <p id="kyQuestionText" class="ky-question-text"></p>
+        <div id="kyOptionsWrap" class="ky-options-wrap"></div>
+      </article>
+
+      <div class="ky-question-footer">
+        <p id="kyAnsweredMeta">Answered 0 / 10</p>
+        <button id="kySubmitBtn" type="button" class="ky-btn-primary" hidden>Submit & View Results</button>
+      </div>
+    </section>
+
+    <section id="kyResultStage" class="ky-stage glass-card" hidden>
+      <div class="ky-result-head">
+        <div>
+          <p class="ky-kicker">Your personality title</p>
+          <h2 id="kyResultTitle" class="ky-result-title">The Real One</h2>
+          <p id="kyResultDescription" class="ky-result-description"></p>
+        </div>
+        <span id="kyResultLabel" class="ky-final-label">Balanced</span>
+      </div>
+
+      <div class="ky-summary-row">
+        <article class="ky-summary-card">
+          <p>Positive Score</p>
+          <strong id="kyPositiveScore">0%</strong>
+        </article>
+        <article class="ky-summary-card">
+          <p>Negative Score</p>
+          <strong id="kyNegativeScore">0%</strong>
+        </article>
+      </div>
+
+      <div class="ky-insight-grid">
+        <article class="ky-insight-card">
+          <h3>Top Green Traits</h3>
+          <ul id="kyTopPositive"></ul>
+        </article>
+        <article class="ky-insight-card">
+          <h3>Top Red Traits</h3>
+          <ul id="kyTopNegative"></ul>
+        </article>
+      </div>
+
+      <article class="ky-graph-card">
+        <header>
+          <h3>Trait Analysis</h3>
+          <p>You vs Population Average</p>
+        </header>
+        <div id="kyTraitBars" class="ky-trait-bars"></div>
+      </article>
+
+      <article class="ky-insight-summary">
+        <h3>Insight Summary</h3>
+        <ul id="kyInsightLines"></ul>
+      </article>
+
+      <div class="ky-stage-actions">
+        <button id="kyRetakeBtn" type="button" class="ky-btn-secondary">Retake Assessment</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/knowyourself.js', v='20260522-2') }}"></script>
+{% endblock %}

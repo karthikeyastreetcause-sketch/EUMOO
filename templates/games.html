@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% block title %}Games | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v='20260524-2') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/games.css', v='20260525-4') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-root" data-mood-theme="neutral">
+  <aside class="dashboard-sidebar" aria-label="Sidebar">
+    <div class="sidebar-logo-container">
+      <a class="sidebar-logo-link" href="{{ url_for('dashboard') }}" aria-label="EUMO Dashboard">
+        <span class="sidebar-logo-mark">{{ user_initial or "E" }}</span>
+        <span class="sidebar-logo-text">EUMO</span>
+      </a>
+    </div>
+
+    <nav class="sidebar-navigation" aria-label="Main Navigation">
+      <ul class="sidebar-nav-list">
+        <li class="sidebar-nav-item"><a href="{{ url_for('dashboard') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'milestones' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="layout-dashboard" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Milestones</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('know_yourself') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'know_yourself' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="brain-circuit" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Know Yourself</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('games') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'games' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="gamepad-2" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Games</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('journal') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'journal' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="notebook-pen" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Journal</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('support') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'support' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="life-buoy" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Support</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('settings') }}" data-nav-transition="true"
+            class="sidebar-nav-link {% if active_nav == 'settings' %}sidebar-nav-link-active{% endif %}"><i
+              data-lucide="settings-2" class="sidebar-nav-icon" aria-hidden="true"></i><span
+              class="sidebar-nav-label">Settings</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-bottom-area">
+      <a href="{{ url_for('logout') }}" class="sidebar-logout-button">Logout</a>
+      <a href="{{ url_for('developers') }}" data-nav-transition="true"
+        class="sidebar-footer-text sidebar-footer-link">Developers</a>
+      <small class="sidebar-footer-text">EUMO v1.0 · Emotional Workspace</small>
+    </div>
+  </aside>
+
+  <main class="dashboard-main-content section-main-content">
+    <section class="panel-shell top-game-hero" aria-labelledby="games-page-title">
+      <div class="top-game-copy">
+        <div class="top-game-kicker">
+          <span class="top-game-status">Games Section</span>
+          <span class="top-game-status">Featured play live now</span>
+        </div>
+        <h1 id="games-page-title">Games</h1>
+        <p>Play quick emotional reset games built for focus, calm, and momentum.</p>
+      </div>
+      <div class="top-game-stats" aria-label="Games quick stats">
+        <div>
+          <span>Live</span>
+          <strong>1</strong>
+        </div>
+        <div>
+          <span>Coming</span>
+          <strong>3</strong>
+        </div>
+        <div>
+          <span>Theme</span>
+          <strong>Focus</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel-shell star-game-panel featured-game-card" aria-label="Catch the Stars featured game">
+      <span class="featured-game-badge"><i data-lucide="sparkles" aria-hidden="true"></i>Featured Game</span>
+      <div class="cosmic-art" aria-hidden="true">
+        <span class="cosmic-star cosmic-star-large"></span>
+        <span class="cosmic-star cosmic-star-mid"></span>
+        <span class="cosmic-comet"></span>
+      </div>
+
+      <div class="star-game-stage">
+        <canvas id="starGameCanvas" width="400" height="600" aria-label="Catch the Stars playable canvas"></canvas>
+
+        <div class="star-game-hud" aria-live="polite">
+          <div class="hud-pill">
+            <span>Score</span>
+            <strong id="starGameScore">0</strong>
+          </div>
+          <div class="hud-pill">
+            <span>Lives</span>
+            <strong id="starGameLives">3</strong>
+          </div>
+        </div>
+
+        <div class="star-game-overlay" id="starGameOverlay">
+          <p class="overlay-kicker" id="starGameOverlayKicker">Ready</p>
+          <h2 id="starGameOverlayTitle">Catch the Stars</h2>
+          <p class="overlay-score" id="starGameOverlayScore">Beat your best run.</p>
+          <button type="button" class="star-game-button" id="starGameRestart">
+            <i data-lucide="play" aria-hidden="true"></i>
+            <span class="star-game-button-label">Start Game</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="star-game-controls">
+        <div class="game-title-cluster">
+          <span class="mini-ribbon">EUMO Pick</span>
+          <h2>Catch the Stars</h2>
+          <div class="title-sparkles" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+
+        <div class="floating-stats" aria-label="Catch the Stars stats">
+          <div>
+            <span>Best Run</span>
+            <strong id="starGameBestScore">0</strong>
+          </div>
+          <div>
+            <span>Reward</span>
+            <strong>+10</strong>
+          </div>
+          <div>
+            <span>Lives</span>
+            <strong>3</strong>
+          </div>
+        </div>
+
+        <div class="game-brief">
+          <span class="game-brief-label">Run Rules</span>
+          <div class="game-brief-row">
+            <strong>+10</strong>
+            <span>Catch a star</span>
+          </div>
+          <div class="game-brief-row">
+            <strong>-1</strong>
+            <span>Miss a star or hit a bomb</span>
+          </div>
+        </div>
+        <p>Use left/right arrows or A/D. On touch screens, hold the controls.</p>
+        <div class="touch-controls" aria-label="Touch movement controls">
+          <button type="button" class="touch-control" data-direction="left" aria-label="Move left">
+            <i data-lucide="arrow-left" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="touch-control" data-direction="right" aria-label="Move right">
+            <i data-lucide="arrow-right" aria-hidden="true"></i>
+          </button>
+        </div>
+
+        <div class="mini-leaderboard" aria-label="Featured game highlights">
+          <div>
+            <span>Reflex Mode</span>
+            <strong>Live</strong>
+          </div>
+          <div>
+            <span>Difficulty</span>
+            <strong>Rising</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="games-grid" aria-label="More games">
+      <article class="panel-shell game-card">
+        <h2>Breath Sync</h2>
+        <p>A paced breathing game for fast nervous-system reset.</p>
+        <span class="status-chip">Planned</span>
+      </article>
+      <article class="panel-shell game-card">
+        <h2>Focus Sprint</h2>
+        <p>A short timed challenge to build momentum and reduce distractions.</p>
+        <span class="status-chip">Planned</span>
+      </article>
+      <article class="panel-shell game-card">
+        <h2>Mind Match</h2>
+        <p>A memory and pattern game designed for cognitive sharpness.</p>
+        <span class="status-chip">Planned</span>
+      </article>
+    </section>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/games.js', v='20260525-4') }}" defer></script>
+{% endblock %}

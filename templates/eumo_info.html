@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}How EUMO Works{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/eumo_info.css', v='20260524-2') }}">
+{% endblock %}
+
+{% block content %}
+<div class="info-page">
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <div class="info-inner">
+    <header class="info-topbar">
+      <a class="brand" href="{{ url_for('landing') }}">EUMO</a>
+      <a href="{{ url_for('signin') }}" class="top-btn">Sign in</a>
+    </header>
+
+    <section class="hero-card">
+      <div class="hero-copy">
+        <p class="eyebrow">How EUMO Works</p>
+        <h1>Built to help you understand your emotional patterns, gently and consistently.</h1>
+        <p class="lead">
+          EUMO is a reflection system, not a diagnosis platform. It combines daily check-ins, guided prompts,
+          journaling, and adaptive insights so you can notice what affects your mood over time.
+        </p>
+        <div class="hero-actions">
+          <a href="{{ url_for('signin') }}" class="btn btn-primary">Start Reflection</a>
+          <a href="{{ url_for('consent') }}" class="btn btn-soft">Read Consent</a>
+        </div>
+      </div>
+      <div class="hero-media">
+        <img src="{{ url_for('static', filename='images/image2.png') }}" alt="EUMO reflection visual" class="hero-image">
+      </div>
+    </section>
+
+    <section class="flow-grid">
+      <article class="flow-card">
+        <p class="flow-step">Step 1</p>
+        <h2>Check In</h2>
+        <p>Log one mood per day. This becomes your base emotional signal for trend tracking.</p>
+      </article>
+      <article class="flow-card">
+        <p class="flow-step">Step 2</p>
+        <h2>Reflect</h2>
+        <p>Answer prompts and journal freely. EUMO stores your entries and context with your account.</p>
+      </article>
+      <article class="flow-card">
+        <p class="flow-step">Step 3</p>
+        <h2>Understand</h2>
+        <p>See emotional stability trends, weekly progress, and contextual suggestions from your own activity.</p>
+      </article>
+      <article class="flow-card">
+        <p class="flow-step">Step 4</p>
+        <h2>Grow</h2>
+        <p>Build consistency with micro-goals, reflection streaks, and adaptive prompts over time.</p>
+      </article>
+    </section>
+
+    <section class="info-grid">
+      <article class="info-panel">
+        <h3>What EUMO Includes</h3>
+        <ul>
+          <li>Daily mood check-ins and emotional weather.</li>
+          <li>Know Yourself assessment and trait-based summaries.</li>
+          <li>Private journaling with optional AI-sharing consent per note.</li>
+          <li>Progress visuals, timeline insights, and adaptive suggestions.</li>
+        </ul>
+      </article>
+      <article class="info-panel">
+        <h3>What EUMO Is Not</h3>
+        <ul>
+          <li>Not a replacement for therapy or emergency support.</li>
+          <li>Not a clinical diagnostic tool.</li>
+          <li>Not a one-time test; it improves with regular use.</li>
+          <li>Not designed to pressure you into perfect streaks.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="trust-row">
+      <article class="trust-card">
+        <p class="trust-kicker">Privacy</p>
+        <h4>You control AI visibility</h4>
+        <p>Journal entries are private by default unless you explicitly allow AI sharing.</p>
+      </article>
+      <article class="trust-card">
+        <p class="trust-kicker">Consistency</p>
+        <h4>Inputs shape your score</h4>
+        <p>Emotional stability is calculated from your real activity, not random placeholders.</p>
+      </article>
+      <article class="trust-card">
+        <p class="trust-kicker">Safety</p>
+        <h4>Support is always available</h4>
+        <p>Support page includes helplines and pathways to professional help resources.</p>
+      </article>
+    </section>
+
+    <section class="footer-actions">
+      <a href="{{ url_for('landing') }}" class="btn btn-soft">Back to Home</a>
+      <a href="{{ url_for('signin') }}" class="btn btn-primary">Continue to Sign In</a>
+    </section>
+  </div>
+</div>
+{% endblock %}

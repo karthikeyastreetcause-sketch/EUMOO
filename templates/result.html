@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Result | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/result.css', v='20260524-2') }}">
+{% endblock %}
+
+{% block content %}
+<section class="result-page">
+  <div class="result-shell">
+    <span class="ambient ambient-one" aria-hidden="true"></span>
+    <span class="ambient ambient-two" aria-hidden="true"></span>
+
+    <header class="result-head">
+      <div>
+        <p class="result-kicker">Assessment Result</p>
+        <h1 class="result-title">Emotional Snapshot</h1>
+      </div>
+      <div class="result-meta">
+        <span class="meta-label">Generated</span>
+        <span id="generatedAt">--</span>
+      </div>
+    </header>
+
+    <section class="hero-card">
+      <div class="hero-main">
+        <p class="hero-label">Dominant Emotion</p>
+        <h2 id="dominantEmotion">Balanced</h2>
+        <p id="secondaryEmotion" class="hero-sub">Secondary: --</p>
+      </div>
+      <div class="hero-severity" id="severityBadge">Minimal</div>
+    </section>
+
+    <section class="metric-grid">
+      <article class="metric-card">
+        <p>Total Answered</p>
+        <strong id="totalAnswered">0</strong>
+      </article>
+      <article class="metric-card">
+        <p>Top Score</p>
+        <strong id="dominantScore">0</strong>
+      </article>
+      <article class="metric-card">
+        <p>Emotions Tracked</p>
+        <strong id="emotionCount">0</strong>
+      </article>
+      <article class="metric-card">
+        <p>Confidence</p>
+        <strong id="confidenceText">Low</strong>
+      </article>
+    </section>
+
+    <section class="content-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <h3>Emotion Score Breakdown</h3>
+        </div>
+        <div id="scoreRows" class="score-rows"></div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h3>Recent Responses</h3>
+        </div>
+        <div id="historyRows" class="history-rows"></div>
+      </article>
+    </section>
+
+    <section class="footer-panel">
+      <p id="disclaimerText" class="disclaimer"></p>
+      <div class="action-row">
+        <a href="{{ url_for('dashboard') }}" class="action-btn action-primary">Go To Dashboard</a>
+        <a href="{{ url_for('logout') }}" class="action-btn action-ghost">Sign Out</a>
+      </div>
+    </section>
+  </div>
+</section>
+
+<script>
+(() => {
+  const FALLBACK_RESULT = {
+    totalAnswered: 0,
+    emotionScores: {},
+    history: [],
+    dominantEmotion: "Balanced",
+    secondaryEmotion: null,
+    dominantScore: 0,
+    severity: "Minimal",
+    disclaimer: "This is not a clinical diagnosis. If distress feels overwhelming, consider speaking to a licensed professional.",
+    generatedAt: new Date().toISOString()
+  };
+
+  function getStoredResult() {
+    try {
+      const raw = localStorage.getItem("assessmentResult");
+      if (!raw) return FALLBACK_RESULT;
+      const parsed = JSON.parse(raw);
+      return { ...FALLBACK_RESULT, ...parsed };
+    } catch (error) {
+      return FALLBACK_RESULT;
+    }
+  }
+
+  function clampSeverity(value) {
+    const allowed = ["Minimal", "Mild", "Moderate", "High"];
+    return allowed.includes(value) ? value : "Minimal";
+  }
+
+  function confidenceLabel(top, second) {
+    const gap = top - second;
+    if (gap >= 6) return "High";
+    if (gap >= 3) return "Medium";
+    return "Low";
+  }
+
+  const result = getStoredResult();
+  const scores = result.emotionScores || {};
+  const sortedScores = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+
+  const dominant = result.dominantEmotion || (sortedScores[0] ? sortedScores[0][0] : "Balanced");
+  const topScore = Number(result.dominantScore || (sortedScores[0] ? sortedScores[0][1] : 0));
+  const secondScore = Number(sortedScores[1] ? sortedScores[1][1] : 0);
+  const severity = clampSeverity(result.severity);
+
+  const generated = new Date(result.generatedAt || Date.now());
+  document.getElementById("generatedAt").textContent = Number.isNaN(generated.getTime())
+    ? "--"
+    : generated.toLocaleString();
+
+  document.getElementById("dominantEmotion").textContent = dominant;
+  document.getElementById("secondaryEmotion").textContent = result.secondaryEmotion
+    ? `Secondary: ${result.secondaryEmotion}`
+    : "Secondary: None";
+
+  const badge = document.getElementById("severityBadge");
+  badge.textContent = severity;
+  badge.dataset.severity = severity.toLowerCase();
+
+  document.getElementById("totalAnswered").textContent = String(result.totalAnswered || 0);
+  document.getElementById("dominantScore").textContent = String(topScore);
+  document.getElementById("emotionCount").textContent = String(Object.keys(scores).length);
+  document.getElementById("confidenceText").textContent = confidenceLabel(topScore, secondScore);
+  document.getElementById("disclaimerText").textContent = result.disclaimer || FALLBACK_RESULT.disclaimer;
+
+  const rowsEl = document.getElementById("scoreRows");
+  const maxScore = Math.max(1, ...sortedScores.map(([, score]) => Number(score) || 0));
+
+  if (sortedScores.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-text";
+    empty.textContent = "No score data found. Complete an assessment to view detailed results.";
+    rowsEl.appendChild(empty);
+  } else {
+    sortedScores.forEach(([emotion, score]) => {
+      const numeric = Number(score) || 0;
+      const row = document.createElement("div");
+      row.className = "score-row";
+
+      const label = document.createElement("span");
+      label.className = "score-label";
+      label.textContent = emotion;
+
+      const barWrap = document.createElement("div");
+      barWrap.className = "score-bar-wrap";
+
+      const bar = document.createElement("div");
+      bar.className = "score-bar";
+      bar.style.width = `${(numeric / maxScore) * 100}%`;
+
+      const value = document.createElement("span");
+      value.className = "score-value";
+      value.textContent = String(numeric);
+
+      barWrap.appendChild(bar);
+      row.appendChild(label);
+      row.appendChild(barWrap);
+      row.appendChild(value);
+      rowsEl.appendChild(row);
+    });
+  }
+
+  const historyEl = document.getElementById("historyRows");
+  const history = Array.isArray(result.history) ? result.history.slice(-6).reverse() : [];
+
+  if (history.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "empty-text";
+    empty.textContent = "No response history available.";
+    historyEl.appendChild(empty);
+  } else {
+    history.forEach((item, index) => {
+      const card = document.createElement("div");
+      card.className = "history-item";
+
+      const title = document.createElement("p");
+      title.className = "history-q";
+      title.textContent = `Q${history.length - index}: ${item.questionId || "Unknown"}`;
+
+      const answer = document.createElement("p");
+      answer.className = "history-a";
+      answer.textContent = item.selectedOption || "No selected option";
+
+      card.appendChild(title);
+      card.appendChild(answer);
+      historyEl.appendChild(card);
+    });
+  }
+})();
+</script>
+{% endblock %}

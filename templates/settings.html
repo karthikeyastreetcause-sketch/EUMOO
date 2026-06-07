@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}Settings | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css', v='20260524-3') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/settings.css', v='20260524-1') }}">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-root" id="settingsRoot" data-mood-theme="neutral" data-user-initial="{{ user_initial or 'E' }}">
+  <aside class="dashboard-sidebar" aria-label="Sidebar">
+    <div class="sidebar-logo-container">
+      <a class="sidebar-logo-link" href="{{ url_for('dashboard') }}" aria-label="EUMO Dashboard">
+        <span class="sidebar-logo-mark">{{ user_initial or "E" }}</span>
+        <span class="sidebar-logo-text">EUMO</span>
+      </a>
+    </div>
+
+    <nav class="sidebar-navigation" aria-label="Main Navigation">
+      <ul class="sidebar-nav-list">
+        <li class="sidebar-nav-item"><a href="{{ url_for('dashboard') }}" data-nav-transition="true" class="sidebar-nav-link {% if active_nav == 'milestones' %}sidebar-nav-link-active{% endif %}"><i data-lucide="layout-dashboard" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Milestones</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('know_yourself') }}" data-nav-transition="true" class="sidebar-nav-link {% if active_nav == 'know_yourself' %}sidebar-nav-link-active{% endif %}"><i data-lucide="brain-circuit" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Know Yourself</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('games') }}" data-nav-transition="true" class="sidebar-nav-link {% if active_nav == 'games' %}sidebar-nav-link-active{% endif %}"><i data-lucide="gamepad-2" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Games</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('journal') }}" data-nav-transition="true" class="sidebar-nav-link {% if active_nav == 'journal' %}sidebar-nav-link-active{% endif %}"><i data-lucide="notebook-pen" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Journal</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('support') }}" data-nav-transition="true" class="sidebar-nav-link {% if active_nav == 'support' %}sidebar-nav-link-active{% endif %}"><i data-lucide="life-buoy" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Support</span></a></li>
+        <li class="sidebar-nav-item"><a href="{{ url_for('settings') }}" data-nav-transition="true" class="sidebar-nav-link {% if active_nav == 'settings' %}sidebar-nav-link-active{% endif %}"><i data-lucide="settings-2" class="sidebar-nav-icon" aria-hidden="true"></i><span class="sidebar-nav-label">Settings</span></a></li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-bottom-area">
+      <a href="{{ url_for('logout') }}" class="sidebar-logout-button">Logout</a>
+      <a href="{{ url_for('developers') }}" data-nav-transition="true" class="sidebar-footer-text sidebar-footer-link">Developers</a>
+      <small class="sidebar-footer-text">EUMO v1.0 · Emotional Workspace</small>
+    </div>
+  </aside>
+
+  <main class="dashboard-main-content settings-main-content">
+    <section class="panel-shell settings-hero">
+      <p class="section-kicker">Settings</p>
+      <h1>Profile & Data Controls</h1>
+      <p>Manage your account details, upload a profile picture, and reset your tracked wellbeing inputs when needed.</p>
+    </section>
+
+    <section class="settings-grid">
+      <article class="panel-shell settings-profile-card">
+        <header class="profile-card-head">
+          <p class="profile-card-kicker">Account Profile</p>
+          <span class="profile-head-badge">Private Space</span>
+        </header>
+
+        <div class="profile-hero">
+          <div class="profile-avatar-shell">
+            <div class="profile-avatar-wrap" id="profileAvatarWrap">
+              {% if profile.profile_image_url %}
+              <img id="profileAvatarImage" src="{{ profile.profile_image_url }}" alt="Profile image"
+                class="profile-avatar-image">
+              <span id="profileAvatarFallback" class="profile-avatar-fallback" hidden>{{ user_initial or "E" }}</span>
+              {% else %}
+              <img id="profileAvatarImage" src="" alt="Profile image" class="profile-avatar-image" hidden>
+              <span id="profileAvatarFallback" class="profile-avatar-fallback">{{ user_initial or "E" }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="profile-meta">
+            <h2>{{ profile.full_name }}</h2>
+            <p>@{{ profile.username }}</p>
+            <div class="profile-quick-meta">
+              <span>{{ profile.email }}</span>
+              <span>{{ profile.phone_number }}</span>
+            </div>
+          </div>
+        </div>
+
+        <form id="profileImageForm" class="profile-image-form panel-glass-subtle" enctype="multipart/form-data">
+          <label for="profileImageInput">Profile photo</label>
+          <div class="profile-image-row">
+            <input id="profileImageInput" type="file" accept="image/png,image/jpeg,image/webp">
+            <button type="submit" id="profileImageUploadBtn">Upload</button>
+          </div>
+          <p id="profileImageFeedback" class="settings-feedback" hidden></p>
+        </form>
+
+        <dl class="profile-details-list">
+          <div>
+            <dt>Name</dt>
+            <dd>{{ profile.full_name }}</dd>
+          </div>
+          <div>
+            <dt>Username</dt>
+            <dd>{{ profile.username }}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{{ profile.email }}</dd>
+          </div>
+          <div>
+            <dt>Phone</dt>
+            <dd>{{ profile.phone_number }}</dd>
+          </div>
+          <div>
+            <dt>Joined</dt>
+            <dd>{{ profile.joined_at }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="panel-shell settings-intelligence-card">
+        <h2>Account Intelligence</h2>
+        <div class="intelligence-grid">
+          <div><p>Mood Entries</p><strong class="count-metric" data-target="{{ intelligence.mood_entries }}">{{ intelligence.mood_entries }}</strong></div>
+          <div><p>Journal Reflections</p><strong class="count-metric" data-target="{{ intelligence.journal_reflections }}">{{ intelligence.journal_reflections }}</strong></div>
+          <div><p>Current Streak</p><strong class="count-metric" data-target="{{ intelligence.current_streak }}">{{ intelligence.current_streak }}</strong></div>
+          <div><p>Most Active Time</p><strong>{{ intelligence.most_active_time }}</strong></div>
+          <div><p>Emotional Trend</p><strong>{{ intelligence.emotional_trend }}</strong></div>
+          <div><p>Total Check-ins</p><strong class="count-metric" data-target="{{ intelligence.total_checkins }}">{{ intelligence.total_checkins }}</strong></div>
+        </div>
+      </article>
+
+      <article class="panel-shell settings-personalization-card">
+        <h2>Personalization</h2>
+        <p>Adjust how EUMO feels for you. These controls are local and can be changed any time.</p>
+        <div class="personalization-controls">
+          <label>Mood Theme
+            <select id="prefMoodTheme">
+              <option value="adaptive">Adaptive</option>
+              <option value="calm">Calm</option>
+              <option value="focused">Focused</option>
+              <option value="soft">Soft</option>
+            </select>
+          </label>
+          <label>Ambient Intensity
+            <input id="prefAmbientIntensity" type="range" min="0" max="100" value="55">
+          </label>
+          <label>AI Tone
+            <select id="prefAiTone">
+              <option value="gentle">Gentle</option>
+              <option value="balanced">Balanced</option>
+              <option value="direct">Direct</option>
+            </select>
+          </label>
+          <label>Animation Intensity
+            <input id="prefAnimationIntensity" type="range" min="0" max="100" value="65">
+          </label>
+          <label>Privacy Depth
+            <select id="prefPrivacyDepth">
+              <option value="strict">Strict</option>
+              <option value="standard">Standard</option>
+              <option value="flexible">Flexible</option>
+            </select>
+          </label>
+          <label>Journaling Atmosphere
+            <select id="prefJournalAtmosphere">
+              <option value="immersive">Immersive</option>
+              <option value="minimal">Minimal</option>
+              <option value="balanced">Balanced</option>
+            </select>
+          </label>
+          <label>Emotional Insight Frequency
+            <select id="prefInsightFrequency">
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </label>
+          <label>Interface Sound
+            <select id="prefInterfaceSound">
+              <option value="off">Off</option>
+              <option value="on">On</option>
+            </select>
+          </label>
+        </div>
+        <p id="settingsPrefFeedback" class="settings-feedback" hidden></p>
+      </article>
+
+      <article class="panel-shell settings-reset-card">
+        <h2>Reset Progress Data</h2>
+        <p>This clears all tracked inputs: mood check-ins, micro goals, reflections, journal notes, and assessment history. Emotional stability returns to 0 and starts fresh from new activity.</p>
+
+        <ul>
+          <li>Reset does not delete your account credentials.</li>
+          <li>Deleted journals remain blocked from AI access by design.</li>
+          <li>Type <strong>RESET</strong> to confirm this action.</li>
+        </ul>
+
+        <form id="resetDataForm" class="reset-form" autocomplete="off">
+          <input id="resetConfirmInput" type="text" placeholder="Type RESET to confirm" maxlength="20" spellcheck="false">
+          <button type="submit" id="resetDataBtn" class="danger-btn">Reset</button>
+        </form>
+        <p id="resetFeedback" class="settings-feedback" hidden></p>
+      </article>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/settings.js', v='20260524-3') }}"></script>
+{% endblock %}

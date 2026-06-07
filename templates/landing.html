@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}EUMO | Reflect with Clarity{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css', v='20260524-3') }}">
+{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="ambient ambient-left"></div>
+    <div class="ambient ambient-right"></div>
+
+    <div class="landing-inner">
+        <header class="topbar reveal">
+            <div class="brand">EUMO</div>
+            <a href="/signin" class="btn btn-ghost sign-in-btn"><span>Sign in</span></a>
+        </header>
+
+        <section class="hero reveal reveal-delay">
+            <p class="eyebrow">Mental wellbeing reflection</p>
+
+            <div class="hero-main">
+                <div class="hero-copy">
+                    <h1 class="headline" id="rotating-headline"></h1>
+
+                    <p class="subhead">
+                        EUMO helps you pause, reflect, and notice patterns in your emotional wellbeing.
+                        This is a self-reflection tool, not a diagnosis platform.
+                    </p>
+
+                    <div class="actions">
+                        <a href="/signin" class="btn btn-primary"><span>Begin Reflection</span></a>
+                        <a href="{{ url_for('eumo_info') }}" class="btn btn-soft">Learn how EUMO works</a>
+                    </div>
+                </div>
+
+                <div class="hero-visual">
+                    <div class="hero-orb" id="heroOrb" aria-hidden="true">
+                        <span class="hero-orb-core"></span>
+                        <span class="hero-orb-wave"></span>
+                    </div>
+                    <img src="{{ url_for('static', filename='images/quotes/quote1.png') }}" alt="Quote"
+                        class="quote-image">
+                    <img src="{{ url_for('static', filename='images/image1.png') }}" alt="Mental health illustration"
+                        class="hero-image">
+
+                    <img src="{{ url_for('static', filename='images/hearts/heart1.png') }}" alt=""
+                        class="heart heart-one">
+                    <img src="{{ url_for('static', filename='images/hearts/heart1.png') }}" alt=""
+                        class="heart heart-two">
+                </div>
+            </div>
+
+            <div class="feature-grid">
+                <article class="feature-card">
+                    <p class="feature-label">Daily clarity</p>
+                    <p class="feature-text">Short reflective prompts</p>
+                </article>
+                <article class="feature-card">
+                    <p class="feature-label">Private by design</p>
+                    <p class="feature-text">Personal, non-clinical journey</p>
+                </article>
+                <article class="feature-card">
+                    <p class="feature-label">Progressive flow</p>
+                    <p class="feature-text">Move gently at your pace</p>
+                </article>
+            </div>
+        </section>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const headlines = [
+            "Mind stuck replaying one moment?<br>Let’s untangle it gently.",
+            "Your mood didn’t shift for no reason.<br>There’s always a pattern. Let’s read it calmly.",
+            "Overthinking something you said hours ago?<br>We can slow it down, step by step."
+        ];
+
+        const el = document.getElementById("rotating-headline");
+        const orb = document.getElementById("heroOrb");
+        let i = 0;
+
+        function renderHeadlineWordByWord(html) {
+            if (!el) return;
+            const text = String(html || "").replace(/<br\s*\/?>/gi, "\n");
+            const lines = text.split("\n").map((line) => line.trim()).filter(Boolean);
+            const tokens = [];
+            lines.forEach((line, lineIdx) => {
+                line.split(/\s+/).forEach((word) => tokens.push({ word, lineBreak: false }));
+                if (lineIdx < lines.length - 1) tokens.push({ word: "<br>", lineBreak: true });
+            });
+
+            el.innerHTML = "";
+            tokens.forEach((token, idx) => {
+                if (token.lineBreak) {
+                    el.appendChild(document.createElement("br"));
+                    return;
+                }
+                const span = document.createElement("span");
+                span.className = "headline-word";
+                span.style.animationDelay = `${Math.min(idx * 38, 760)}ms`;
+                span.textContent = token.word;
+                el.appendChild(span);
+            });
+        }
+
+        renderHeadlineWordByWord(headlines[0]);
+
+        setInterval(() => {
+            i = (i + 1) % headlines.length;
+            el.classList.add("is-fading");
+            setTimeout(() => {
+                renderHeadlineWordByWord(headlines[i]);
+                el.classList.remove("is-fading");
+            }, 280);
+        }, 15000);
+
+        if (orb) {
+            document.addEventListener("mousemove", (event) => {
+                const nx = (event.clientX / window.innerWidth - 0.5) * 12;
+                const ny = (event.clientY / window.innerHeight - 0.5) * 12;
+                orb.style.setProperty("--orb-x", `${nx.toFixed(2)}px`);
+                orb.style.setProperty("--orb-y", `${ny.toFixed(2)}px`);
+            });
+        }
+    })();
+</script>
+{% endblock %}

@@ -1,0 +1,340 @@
+{% extends "base.html" %}
+{% block title %}Assessment | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/assessments.css', v='20260524-2') }}">
+{% endblock %}
+
+{% block content %}
+<section class="assessment-page">
+  <div class="assessment-shell">
+    <span class="float-heart one" aria-hidden="true">❤</span>
+    <span class="float-heart two" aria-hidden="true">❤</span>
+
+    <div class="assessment-head">
+      <div>
+        <p class="assessment-kicker">EUMO Assessment</p>
+        <h1 class="assessment-title">Emotional Check-In</h1>
+      </div>
+      <div class="progress-pill">
+        <span id="questionProgress">Question 1 / 15</span>
+        <span id="summaryProgress" class="progress-subtext">Answered 0 · Skipped 0</span>
+      </div>
+    </div>
+
+    <div class="progress-track" aria-hidden="true">
+      <div id="progressBar" class="progress-fill"></div>
+    </div>
+
+    <div class="meta-row" aria-live="polite">
+      <div class="meta-chip">
+        <span class="meta-label">Phase</span>
+        <strong id="phaseBadge" class="phase-badge is-screening">Screening</strong>
+      </div>
+      <div class="meta-chip">
+        <span class="meta-label">Current Emotion</span>
+        <strong id="emotionLabel">--</strong>
+      </div>
+      <div class="meta-chip">
+        <span class="meta-label">Leading Signal</span>
+        <strong id="leadingEmotion">--</strong>
+      </div>
+    </div>
+
+    <article id="questionCard" class="question-card">
+      <p id="questionTag" class="question-tag"></p>
+      <h2 id="questionText" class="question-text"></h2>
+      <p class="question-help">Choose the option that best matches how you feel right now.</p>
+      <div id="optionsWrap" class="options-grid"></div>
+      <div class="question-controls">
+        <button type="button" id="skipBtn" class="skip-btn">Skip Question</button>
+      </div>
+    </article>
+
+    <p id="errorText" class="error-text" hidden></p>
+  </div>
+</section>
+
+<script src="{{ url_for('static', filename='js/emotion-question-bank.js') }}"></script>
+<script src="{{ url_for('static', filename='js/emotion-engine.js') }}"></script>
+<script>
+(() => {
+  const RESULTS_ROUTE = "{{ url_for('result') }}";
+  const SUBMIT_ROUTE = "{{ url_for('submit_assessment') }}";
+  const STORAGE_KEY = "assessmentResult";
+  const DEFAULT_CONFIG = {
+    minAnswered: 8,
+    maxAnswered: 15,
+    confidenceGap: 4,
+    skipPenaltyBoost: 2,
+    skipPenaltyDecay: 1,
+    skipPenaltyWeight: 1
+  };
+
+  const Engine = window.EmotionEngine;
+  const QUESTION_BANK = window.EMOTION_QUESTION_BANK;
+
+  const state = {
+    engine: null,
+    currentQuestion: null,
+    answered: 0,
+    skipped: 0,
+    history: [],
+    isSubmitting: false,
+    isCompleting: false
+  };
+
+  const $progress = document.getElementById("questionProgress");
+  const $summary = document.getElementById("summaryProgress");
+  const $bar = document.getElementById("progressBar");
+  const $phase = document.getElementById("phaseBadge");
+  const $emotion = document.getElementById("emotionLabel");
+  const $leading = document.getElementById("leadingEmotion");
+  const $tag = document.getElementById("questionTag");
+  const $text = document.getElementById("questionText");
+  const $opts = document.getElementById("optionsWrap");
+  const $skip = document.getElementById("skipBtn");
+  const $err = document.getElementById("errorText");
+
+  function showError(msg) {
+    $err.textContent = msg;
+    $err.hidden = false;
+  }
+
+  function clearError() {
+    $err.textContent = "";
+    $err.hidden = true;
+  }
+
+  function mapSeverity(engineSeverity) {
+    if (engineSeverity === "high" || engineSeverity === "very-high") return "High";
+    if (engineSeverity === "moderate") return "Moderate";
+    if (engineSeverity === "low") return "Mild";
+    return "Minimal";
+  }
+
+  function getTopEmotion(scores) {
+    const sorted = Object.entries(scores || {}).sort((a, b) => Number(b[1]) - Number(a[1]));
+    if (!sorted.length || Number(sorted[0][1]) <= 0) return null;
+    return { emotion: sorted[0][0], score: Number(sorted[0][1]) };
+  }
+
+  function updateDashboardState() {
+    const maxQuestions = state.engine ? state.engine.config.maxAnswered : DEFAULT_CONFIG.maxAnswered;
+    const asked = state.answered + state.skipped;
+    const current = Math.min(asked + 1, maxQuestions);
+    const completionPercent = Math.min(100, (asked / maxQuestions) * 100);
+
+    $progress.textContent = `Question ${current} / ${maxQuestions}`;
+    $summary.textContent = `Answered ${state.answered} · Skipped ${state.skipped}`;
+    $bar.style.width = `${Math.max(6, completionPercent)}%`;
+
+    const snapshot = state.engine ? state.engine.getResults() : { emotionScores: {} };
+    const top = getTopEmotion(snapshot.emotionScores);
+    $leading.textContent = top ? `${top.emotion} (${top.score})` : "--";
+  }
+
+  function lockInteractions(locked) {
+    $skip.disabled = locked;
+    Array.from($opts.querySelectorAll("button")).forEach((btn) => {
+      btn.disabled = locked;
+    });
+  }
+
+  function renderQuestion(question) {
+    clearError();
+
+    if (!question) {
+      completeAssessment();
+      return;
+    }
+
+    state.currentQuestion = question;
+
+    const isGateway = question.type === "gateway";
+    $phase.textContent = isGateway ? "Screening" : "Deep Dive";
+    $phase.classList.toggle("is-screening", isGateway);
+    $phase.classList.toggle("is-deep", !isGateway);
+    $emotion.textContent = question.emotion;
+    $tag.textContent = `${question.emotion} • ${isGateway ? "Gateway" : `Depth ${question.depth || 1}`}`;
+    $text.textContent = question.text;
+    $opts.innerHTML = "";
+
+    if (!Array.isArray(question.options) || !question.options.length) {
+      showError("No options found for this question. Ending safely.");
+      completeAssessment();
+      return;
+    }
+
+    question.options.forEach((opt) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "option-btn";
+
+      const label = document.createElement("span");
+      label.className = "option-label";
+      label.textContent = opt.text;
+      btn.appendChild(label);
+
+      if (Number.isFinite(opt.intensity)) {
+        const tag = document.createElement("span");
+        tag.className = "option-meta";
+        tag.textContent = `Intensity ${opt.intensity}`;
+        btn.appendChild(tag);
+      }
+
+      btn.addEventListener("click", () => submitAnswer(opt));
+      $opts.appendChild(btn);
+    });
+
+    state.isSubmitting = false;
+    lockInteractions(false);
+    updateDashboardState();
+  }
+
+  function submitAnswer(option) {
+    if (!state.engine || !state.currentQuestion || state.isSubmitting) return;
+    state.isSubmitting = true;
+    lockInteractions(true);
+
+    const nextQuestion = state.engine.answer({ id: option.id });
+    state.answered += 1;
+    state.history.push({
+      questionId: state.currentQuestion.id,
+      emotion: state.currentQuestion.emotion,
+      selectedOption: option.text,
+      scoreAdded: option.score,
+      intensity: option.intensity,
+      skipped: false
+    });
+
+    renderQuestion(nextQuestion);
+  }
+
+  function skipQuestion() {
+    if (!state.engine || !state.currentQuestion || state.isSubmitting) return;
+    state.isSubmitting = true;
+    lockInteractions(true);
+
+    const nextQuestion = state.engine.skip();
+    state.skipped += 1;
+    state.history.push({
+      questionId: state.currentQuestion.id,
+      emotion: state.currentQuestion.emotion,
+      selectedOption: "Skipped",
+      scoreAdded: 0,
+      intensity: null,
+      skipped: true
+    });
+
+    renderQuestion(nextQuestion);
+  }
+
+  function buildResultPayload() {
+    const results = state.engine ? state.engine.getResults() : {
+      emotionScores: {},
+      dominantEmotion: null,
+      secondaryEmotion: null,
+      severity: "none",
+      totalAnswered: state.answered,
+      totalSkipped: state.skipped
+    };
+
+    const sortedScores = Object.entries(results.emotionScores || {}).sort(
+      (a, b) => Number(b[1]) - Number(a[1])
+    );
+    const dominantScore = sortedScores[0] ? Number(sortedScores[0][1]) || 0 : 0;
+    const dominantEmotion = dominantScore > 0
+      ? (results.dominantEmotion || sortedScores[0][0])
+      : "Balanced";
+    const secondaryEmotion = dominantScore > 0
+      ? (results.secondaryEmotion || (sortedScores[1] ? sortedScores[1][0] : null))
+      : null;
+
+    return {
+      totalAnswered: results.totalAnswered,
+      totalSkipped: results.totalSkipped,
+      emotionScores: results.emotionScores || {},
+      dominantEmotion,
+      secondaryEmotion,
+      dominantScore,
+      severity: mapSeverity(results.severity),
+      history: state.history,
+      disclaimer: "This is not a clinical diagnosis. If distress feels overwhelming, consider speaking to a licensed professional.",
+      generatedAt: new Date().toISOString()
+    };
+  }
+
+  async function persistAssessment(payload) {
+    const response = await fetch(SUBMIT_ROUTE, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "same-origin",
+      body: JSON.stringify(payload)
+    });
+
+    let data = {};
+    try {
+      data = await response.json();
+    } catch (_err) {
+      data = {};
+    }
+
+    if (!response.ok || data.ok !== true) {
+      throw new Error(data.message || "Unable to save assessment. Please try again.");
+    }
+
+    return data;
+  }
+
+  async function completeAssessment() {
+    if (state.isCompleting) return;
+    state.isCompleting = true;
+
+    updateDashboardState();
+    $bar.style.width = "100%";
+    const payload = buildResultPayload();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+
+    try {
+      await persistAssessment(payload);
+      window.location.href = RESULTS_ROUTE;
+    } catch (err) {
+      showError(err.message || "Unable to save assessment right now.");
+      state.isCompleting = false;
+      state.isSubmitting = false;
+      lockInteractions(false);
+    }
+  }
+
+  function initialize() {
+    if (typeof Engine !== "function") {
+      showError("Assessment engine failed to load. Please refresh this page.");
+      lockInteractions(true);
+      return;
+    }
+
+    if (!Array.isArray(QUESTION_BANK) || QUESTION_BANK.length === 0) {
+      showError("Question bank is unavailable. Please contact support.");
+      lockInteractions(true);
+      return;
+    }
+
+    state.engine = new Engine(QUESTION_BANK, DEFAULT_CONFIG);
+    const firstQuestion = state.engine.start();
+    if (!firstQuestion) {
+      showError("No questions available right now.");
+      lockInteractions(true);
+      return;
+    }
+
+    renderQuestion(firstQuestion);
+  }
+
+  $skip.addEventListener("click", skipQuestion);
+  initialize();
+})();
+</script>
+{% endblock %}

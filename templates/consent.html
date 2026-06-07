@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Consent | EUMO{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/consent.css', v='20260524-2') }}">
+{% endblock %}
+
+{% block content %}
+<div class="consent-page">
+    <div class="mesh mesh-a"></div>
+    <div class="mesh mesh-b"></div>
+    <div class="mesh mesh-c"></div>
+
+    <section class="consent-shell">
+        <aside class="consent-left reveal">
+            <p class="eyebrow">EUMO Protocol</p>
+            <h1>One clear agreement before we begin.</h1>
+            <p class="lead">
+                This space is built for reflection, not diagnosis. We keep the experience calm, honest, and safe.
+            </p>
+
+            <div class="pill-row">
+                <span class="pill">Non-clinical</span>
+                <span class="pill">Private by design</span>
+                <span class="pill">You control your pace</span>
+            </div>
+
+            <div class="quote-card">
+                <p class="quote-mark">“</p>
+                <p class="quote-text">You don’t have to control your thoughts. You just have to stop letting them
+                    control you.</p>
+                <p class="quote-author">— Dan Millman</p>
+            </div>
+        </aside>
+
+        <section class="consent-card reveal delay-1">
+            <div class="consent-top">
+                <p class="step">Step 1 of 2</p>
+                <h2>Consent to continue</h2>
+                <p class="desc">After this, you’ll be redirected to your assessments.</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-stack">
+                {% for category, message in messages %}
+                <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <div class="policy-list">
+                <article>
+                    <h3>Purpose</h3>
+                    <p>EUMO supports emotional self-reflection and pattern awareness.</p>
+                </article>
+                <article>
+                    <h3>Boundaries</h3>
+                    <p>EUMO does not provide treatment plans, diagnosis, or crisis response.</p>
+                </article>
+                <article>
+                    <h3>Choice</h3>
+                    <p>You can pause or discontinue use at any time.</p>
+                </article>
+            </div>
+
+            <form method="POST" class="consent-form">
+                <label class="consent-check">
+                    <input type="checkbox" name="consent_agree" required>
+                    <span>I understand and agree to continue with EUMO under these terms.</span>
+                </label>
+
+                <button type="submit" class="consent-btn">
+                    <span>Agree and Continue</span>
+                </button>
+            </form>
+        </section>
+    </section>
+</div>
+{% endblock %}
