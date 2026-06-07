@@ -3173,20 +3173,6 @@ def support():
     return render_template("support.html", **page_context)
 
 
-@app.route("/developers")
-def developers():
-    conn, user, redirect_response = require_authenticated_page_user()
-    if redirect_response:
-        return redirect_response
-
-    ensure_login_activity(conn, user["id"])
-    log_user_event(conn, user["id"], "developers_page_view", {"route": "/developers"})
-    conn.commit()
-    page_context = build_shell_context(user, "developers")
-    conn.close()
-    return render_template("developers.html", **page_context)
-
-
 @app.route("/settings")
 def settings():
     conn, user, redirect_response = require_authenticated_page_user()
